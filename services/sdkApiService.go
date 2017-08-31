@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	mongoUrl = "192.168.109.233:27017"
+	mongoUrl = "212.188.172.216:27017"
 	unExist  = "notExist"
 	redisKey = "test_key"
 )
