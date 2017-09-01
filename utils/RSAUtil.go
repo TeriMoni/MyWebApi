@@ -7,7 +7,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
+
+	"github.com/astaxie/beego"
 )
 
 var privateKey = []byte(`  
@@ -44,7 +45,7 @@ func RsaEncrypt(origData []byte) ([]byte, error) {
 	//解密pem格式的公钥
 	block, _ := pem.Decode(publicKey)
 	if block == nil {
-		fmt.Println("public key error")
+		beego.Error("public key error")
 		return nil, errors.New("public key error")
 	}
 	// 解析公钥
@@ -63,7 +64,7 @@ func RsaDecrypt(ciphertext []byte) ([]byte, error) {
 	//解密
 	block, _ := pem.Decode(privateKey)
 	if block == nil {
-		fmt.Println("private key error")
+		beego.Error("private key error")
 		return nil, errors.New("private key error!")
 	}
 	//解析PKCS1格式的私钥

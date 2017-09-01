@@ -2,7 +2,6 @@ package utils
 
 //redis 工具类
 import (
-	"fmt"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -31,12 +30,12 @@ func init() {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", REDIS_HOST)
 			if err != nil {
-				fmt.Println("Connect to redis error", err)
+				beego.Error("Connect to redis error", err)
 				return nil, err
 			}
 			if _, err := c.Do("AUTH", REDIS_PASSWORD); err != nil {
 				c.Close()
-				fmt.Println("password is error", err)
+				beego.Error("password is error", err)
 				return nil, err
 			}
 			c.Do("SELECT", REDIS_DB)
@@ -53,7 +52,7 @@ func GetCache(key string) string {
 	defer rs.Close()
 	value, err := redis.String(rs.Do("GET", key))
 	if err != nil {
-		fmt.Println("redis get cache error,key:", key)
+		beego.Error("redis get cache error,key:", key)
 		return ""
 	}
 	return value
@@ -66,7 +65,7 @@ func SetCache(key string, value string) {
 	defer rs.Close()
 	_, err := rs.Do("SET", key, value)
 	if err != nil {
-		fmt.Println("redis set cache failed:", err)
+		beego.Error("redis set cache failed:", err)
 	}
 }
 
@@ -80,7 +79,7 @@ func SetCacheAndTime(key string, value string, expireTime int) {
 		rs.Do("EXPIRE", key, expireTime)
 	}
 	if err != nil {
-		fmt.Println("redis set cache and expire time failed:", err)
+		beego.Error("redis set cache and expire time failed:", err)
 	}
 }
 
@@ -90,7 +89,7 @@ func DeleteCache(key string) bool {
 	defer rs.Close()
 	_, err := rs.Do("DEL", key)
 	if err != nil {
-		fmt.Println("redis delelte cache failed:", err)
+		beego.Error("redis delelte cache failed:", err)
 		return false
 	}
 	return true
@@ -102,7 +101,7 @@ func Push(key string, value string) {
 	defer rs.Close()
 	_, err := rs.Do("rpush", key, value)
 	if err != nil {
-		fmt.Println("redis push cache queue failed:", err)
+		beego.Error("redis push cache queue failed:", err)
 	}
 }
 
@@ -112,7 +111,7 @@ func Pop(key string) {
 	defer rs.Close()
 	_, err := rs.Do("lpop", key)
 	if err != nil {
-		fmt.Println("redis pop cache queue failed:", err)
+		beego.Error("redis pop cache queue failed:", err)
 	}
 }
 
@@ -122,11 +121,11 @@ func Length(key string) int64 {
 	defer rs.Close()
 	lenth, err := rs.Do("llen", key)
 	if err != nil {
-		fmt.Println("redis get quenue length failed:", err)
+		beego.Error("redis get quenue length failed:", err)
 	}
 	count, ok := lenth.(int64)
 	if !ok {
-		fmt.Println("类型转换错误!", err)
+		beego.Error("类型转换错误!", err)
 		return 0
 	}
 	return count
@@ -137,7 +136,7 @@ func IsExist(key string) bool {
 	defer rs.Close()
 	is_key_exit, err := redis.Bool(rs.Do("EXISTS", key))
 	if err != nil {
-		fmt.Println("redis get key failed:", err)
+		beego.Error("redis get key failed:", err)
 		return false
 	} else {
 		return is_key_exit

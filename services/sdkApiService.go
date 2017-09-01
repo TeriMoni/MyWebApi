@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/astaxie/beego"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -76,7 +76,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	systemInfo := appData.SystemInfo
 	attackMonitor := appData.AttackMonitor
 	var appName string = currentAppInfo.AppName
-	fmt.Println("攻击检测app名称:", appName)
+	//	fmt.Println("攻击检测app名称:", appName)
 	//处理具体业务逻辑
 	var customerApp = models.App{}
 	query := func(c *mgo.Collection) error {
@@ -84,9 +84,9 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	}
 	err := witchCollection("customer_app", query)
 	if err != nil {
-		panic(err)
+		beego.Error("mogo 查询错误", err)
 	}
-	fmt.Println("攻击检测的客户id:", customerApp.UserId)
+	beego.Info("攻击检测的客户id:", customerApp.UserId)
 	var attackResult = models.AttackResult{}
 	//判断是否为debug 调试
 	var isDebug bool = attackMonitor.IsDebug
@@ -95,7 +95,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	var rePackage string = attackMonitor.RePackage
 	var hijackInfo models.HijackInfo = attackMonitor.IsHijack
 	if isDebug {
-		fmt.Println("攻击类型为debug调试！")
+		beego.Info("攻击类型为debug调试！")
 		attackResult.IsDebug = true
 		insertValue := getInsertValue(customerApp, currentAppInfo, networkInfo, systemInfo, appData, ip)
 		mongList.PushBack(insertValue)
@@ -103,7 +103,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	if dexHook != "" {
 		for _, info := range utils.GetAttackNames() {
 			if info == dexHook {
-				fmt.Println("攻击类型为dexHook攻击！,攻击类型:" + info)
+				beego.Info("攻击类型为dexHook攻击！,攻击类型:" + info)
 				attackResult.DexHook = true
 				insertValue := getInsertValue(customerApp, currentAppInfo, networkInfo, systemInfo, appData, ip)
 				insertValue["attackType"] = "dexHook"
@@ -115,7 +115,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	if soHook != "" {
 		for _, info := range utils.GetAttackNames() {
 			if info == soHook {
-				fmt.Println("攻击类型为soHook攻击！,攻击类型:" + info)
+				beego.Info("攻击类型为soHook攻击！,攻击类型:" + info)
 				attackResult.SoHook = true
 				insertValue := getInsertValue(customerApp, currentAppInfo, networkInfo, systemInfo, appData, ip)
 				insertValue["attackType"] = "soHook"
@@ -128,7 +128,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	if rePackage != "" {
 		flag := IsRePackageApp(currentAppInfo.MD5)
 		if flag {
-			fmt.Println("攻击类型为二次打包！")
+			beego.Info("攻击类型为二次打包！")
 			attackResult.RePackage = true
 			insertValue := getInsertValue(customerApp, currentAppInfo, networkInfo, systemInfo, appData, ip)
 			insertValue["attackType"] = "rePackage"
@@ -140,7 +140,7 @@ func DealAttackInfo(param []byte, ip string) models.BaseResult {
 	if hijackpackage != "" {
 		for _, info := range utils.GetDangerPackages() {
 			if info == hijackpackage {
-				fmt.Println("攻击类型为isHijack攻击")
+				beego.Info("攻击类型为isHijack攻击")
 				attackResult.IsHijack = true
 				insertValue := getInsertValue(customerApp, currentAppInfo, networkInfo, systemInfo, appData, ip)
 				insertValue["attackType"] = "isHijack"
@@ -208,11 +208,11 @@ func getInsertValue(customerApp models.App, currentAppInfo models.CurrentAppInfo
 	resultMap["packageName"] = currentAppInfo.PackageName
 	installTime, err := strconv.Atoi(currentAppInfo.FirstInstallTime)
 	if err != nil {
-		log.Fatal(err)
+		beego.Error("时间格式化错误:{}", currentAppInfo.FirstInstallTime, err)
 	}
 	updateTime, err := strconv.Atoi(currentAppInfo.LastUpdateTime)
 	if err != nil {
-		log.Fatal(err)
+		beego.Error("时间格式化错误:{}", currentAppInfo.LastUpdateTime, err)
 	}
 	//格式化时间毫秒数为时间
 	resultMap["installTime"] = time.Unix(int64(installTime)/1000, 0).Format("2006-01-02 15:04:05")
@@ -233,16 +233,15 @@ func getAddressFromIp(ip string, enCoding string) map[string]interface{} {
 	postUrl := "http://int.dpool.sina.com.cn/iplookup/iplookup.php?format=json&ip=" + "221.228.46.31"
 	resp, err := http.Get(postUrl)
 	if err != nil {
-		panic(err)
-		fmt.Println("请求获取地域信息接口错误")
+		beego.Error("请求获取地域信息接口错误", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		beego.Error("读取新浪接口数据错误", err)
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		log.Println(err)
+		beego.Error("json string convert to struct error", err)
 	}
 	return result
 }
@@ -258,10 +257,10 @@ func tansferCode(source string) string {
 		}
 		temp, err := strconv.ParseInt(v, 16, 32)
 		if err != nil {
-			panic(err)
+			beego.Error("uinicode 转中文错误", err)
 		}
 		context += fmt.Sprintf("%c", temp)
 	}
-	fmt.Println(context)
+	beego.Info(context)
 	return context
 }
